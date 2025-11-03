@@ -2,7 +2,7 @@
 
 **10 open-source AI experts that outperform GPT-5 — only €9/month**
 
-From **Vigo, Spain** | GDPR & AI Act compliant | Hosted on Vast.ai
+From **Spain** | GDPR & AI Act compliant | Hosted on Vast.ai
 
 ---
 
