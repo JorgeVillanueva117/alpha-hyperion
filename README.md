@@ -1,4 +1,4 @@
-# Alpha Hyperion
+# Alpha Hyperion AI
 
 **10 open-source AI experts that outperform GPT-5 — only €9/month**
 
