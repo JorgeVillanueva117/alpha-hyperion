@@ -1,235 +1,367 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Alpha Hyperion — Chat</title>
-  <meta name="description" content="Alpha Hyperion AI — Interfaz de chat. Frontend minimalista para conectar con tu router/API de Alpha Hyperion." />
+  <meta name="description" content="Alpha Hyperion v5.3 — Router IA con 3 expertos: matemáticas, código y lenguaje." />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{
-      --bg:#0b1020; --panel:#0f1724; --muted:#98a0b3; --accent:#4f46e5; --accent-2:#06b6d4; --card:#0b1220; --success:#10b981;
+    :root {
+      --bg: #0b1020;
+      --panel: #0f1724;
+      --muted: #98a0b3;
+      --accent: #4f46e5;
+      --accent-2: #06b6d4;
+      --card: #0b1220;
+      --success: #10b981;
       --glass: rgba(255,255,255,0.03);
       --shadow: 0 6px 18px rgba(2,6,23,0.6);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,#05060a 0%, #071028 60%);color:#e6eef8}
-    .app{display:grid;grid-template-columns:320px 1fr;gap:20px;padding:20px;height:100vh}
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: linear-gradient(180deg, #05060a 0%, #071028 60%); color: #e6eef8; }
+    .app { display: grid; grid-template-columns: 320px 1fr; gap: 20px; padding: 20px; height: 100vh; }
+    
+    /* === SIDEBAR: HISTORIAL DE CONVERSACIONES === */
+    .sidebar {
+      background: var(--panel); border-radius: 12px; padding: 16px; box-shadow: var(--shadow);
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .logo {
+      font-weight: 700; font-size: 18px; display: flex; align-items: center; gap: 10px;
+    }
+    .logo .dot {
+      width: 12px; height: 12px; border-radius: 4px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    }
+    .small { font-size: 12px; color: var(--muted); }
+    
+    .conversations {
+      flex: 1; overflow-y: auto; padding-right: 6px;
+    }
+    .conv-item {
+      background: var(--glass); padding: 10px; border-radius: 8px; margin-bottom: 8px;
+      cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+      transition: all 0.2s ease;
+    }
+    .conv-item:hover { background: rgba(255,255,255,0.06); }
+    .conv-item.active {
+      outline: 2px solid rgba(79,70,229,0.2); box-shadow: inset 0 -2px 0 rgba(255,255,255,0.02);
+    }
+    .conv-title { font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+    .conv-time { font-size: 11px; color: var(--muted); }
+    
+    .controls {
+      display: flex; gap: 8px; margin-top: 8px;
+    }
+    .btn {
+      flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03);
+      background: linear-gradient(90deg, rgba(255,255,255,0.02), transparent); cursor: pointer;
+      font-size: 13px; text-align: center;
+    }
 
-    /* Sidebar */
-    .sidebar{background:var(--panel);border-radius:12px;padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column}
-    .logo{font-weight:700;font-size:18px;margin-bottom:8px;display:flex;gap:10px;align-items:center}
-    .logo .dot{width:12px;height:12px;border-radius:4px;background:linear-gradient(135deg,var(--accent),var(--accent-2))}
-    .models{margin-top:10px;flex:1;overflow:auto;padding-right:6px}
-    .model{background:var(--glass);padding:10px;border-radius:8px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
-    .model.active{outline:2px solid rgba(79,70,229,0.12);box-shadow:inset 0 -2px 0 rgba(255,255,255,0.02)}
-    .small{font-size:12px;color:var(--muted)}
-    .controls{margin-top:10px}
-    .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;background:linear-gradient(90deg,rgba(255,255,255,0.02),transparent);border:1px solid rgba(255,255,255,0.03);cursor:pointer}
+    /* === MAIN CHAT === */
+    .main { display: flex; flex-direction: column; gap: 12px; }
+    .header {
+      display: flex; justify-content: space-between; align-items: center; padding: 12px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.02), transparent); border-radius: 12px;
+    }
+    .title { font-size: 16px; font-weight: 700; }
+    .chip {
+      background: var(--card); padding: 6px 10px; border-radius: 999px; font-size: 13px;
+      color: var(--muted); border: 1px solid rgba(255,255,255,0.02);
+    }
+    .chat {
+      flex: 1; overflow-y: auto; padding: 16px; border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+      box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 14px;
+    }
+    .msg {
+      display: flex; gap: 12px; max-width: 85%;
+    }
+    .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 8px; flex: 0 0 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+    }
+    .bubble {
+      padding: 12px; border-radius: 12px; line-height: 1.5; font-size: 14px;
+      word-wrap: break-word;
+    }
+    .bubble.user { background: linear-gradient(90deg, rgba(79,70,229,0.16), rgba(6,182,212,0.06)); }
+    .bubble.bot { background: rgba(255,255,255,0.03); }
+    .meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
-    /* Main */
-    .main{display:flex;flex-direction:column;gap:12px}
-    .header{display:flex;align-items:center;justify-content:space-between;padding:12px;background:linear-gradient(90deg,rgba(255,255,255,0.02),transparent);border-radius:12px}
-    .title{font-size:16px;font-weight:700}
-    .settings{display:flex;gap:8px;align-items:center}
-    .chip{background:var(--card);padding:8px;border-radius:999px;font-size:13px;color:var(--muted);border:1px solid rgba(255,255,255,0.02)}
+    .composer {
+      display: flex; gap: 10px; padding: 12px; background: linear-gradient(90deg, rgba(255,255,255,0.01), transparent);
+      border-radius: 12px; align-items: flex-end;
+    }
+    textarea {
+      flex: 1; min-height: 48px; max-height: 180px; resize: none;
+      background: transparent; border: 1px solid rgba(255,255,255,0.04); border-radius: 8px;
+      padding: 10px; color: inherit; font-size: 14px;
+    }
+    .send {
+      background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: white;
+      border: none; border-radius: 10px; padding: 0 16px; cursor: pointer; font-weight: 600;
+    }
+    .footer {
+      display: flex; justify-content: space-between; font-size: 12px; color: var(--muted);
+    }
 
-    .chat{flex:1;overflow:auto;padding:14px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));box-shadow:var(--shadow)}
-    .msg{display:flex;gap:12px;margin-bottom:14px}
-    .avatar{width:40px;height:40px;border-radius:8px;flex:0 0 40px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700}
-    .bubble{padding:12px;border-radius:12px;max-width:78%;line-height:1.4}
-    .bubble.user{background:linear-gradient(90deg, rgba(79,70,229,0.16), rgba(6,182,212,0.06));align-self:flex-end}
-    .bubble.bot{background:rgba(255,255,255,0.03)}
-    .meta{font-size:12px;color:var(--muted);margin-top:6px}
-
-    .composer{display:flex;gap:8px;padding:12px;background:linear-gradient(90deg, rgba(255,255,255,0.01), transparent);border-radius:12px;align-items:center}
-    textarea{flex:1;min-height:48px;max-height:240px;border-radius:8px;padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit;font-size:14px}
-    .send{background:linear-gradient(90deg,var(--accent),var(--accent-2));padding:10px 14px;border-radius:10px;border:none;color:white;cursor:pointer}
-
-    .footer{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px;margin-top:6px}
-    .setting-row{display:flex;gap:8px;align-items:center}
-
-    /* responsive */
-    @media(max-width:900px){.app{grid-template-columns:1fr;}
-      .sidebar{order:2}
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { order: 2; }
     }
   </style>
 </head>
 <body>
   <div class="app" id="app">
-    <aside class="sidebar" aria-label="Panel de modelos">
-      <div class="logo"><span class="dot"></span><div>Alpha Hyperion <span class="small">v3</span></div></div>
-      <div class="small">Expert Mesh — Selecciona un experto para probar</div>
-      <div class="models" id="modelList" role="list">
-        <!-- Models injected by JS -->
+    <!-- === SIDEBAR: HISTORIAL DE CONVERSACIONES === -->
+    <aside class="sidebar">
+      <div class="logo">
+        <div class="dot"></div>
+        <div>Alpha Hyperion <span class="small">v5.3</span></div>
       </div>
+      <div class="small">Router activo • 3 expertos</div>
+
+      <div class="conversations" id="convList">
+        <!-- Conversaciones se inyectan aquí -->
+      </div>
+
       <div class="controls">
-        <div style="display:flex;gap:8px;margin-bottom:8px">
-          <button class="btn" id="newConv">+ Nueva conversación</button>
-          <button class="btn" id="clearCache">🧹 Limpiar cache</button>
-        </div>
-        <div class="small" style="margin-top:8px">Router: <strong id="routerStatus">activo</strong></div>
+        <button class="btn" id="newConv">+ Nueva</button>
+        <button class="btn" id="clearAll">Limpiar</button>
       </div>
     </aside>
 
+    <!-- === MAIN CHAT === -->
     <main class="main">
       <header class="header">
         <div>
-          <div class="title">Alpha Hyperion — Chat</div>
-          <div class="small">Conecta tu frontend a <code>/api/chat</code> (router) — configuraciones abajo.</div>
+          <div class="title">Chat con Hyperion Router</div>
+          <div class="small">Escribe y el router elige el mejor modelo</div>
         </div>
-        <div class="settings">
-          <div class="chip" id="selectedModel">Modelo: —</div>
-          <div class="chip">Contexto: <span id="contextSize">128k</span></div>
-          <div class="chip">Modo: <select id="modeSelect" style="background:transparent;border:none;color:inherit">
-            <option>Conversación</option><option>Resumen</option><option>Code-run</option>
-          </select></div>
+        <div style="display:flex; gap:8px">
+          <div class="chip" id="selectedExpert">—</div>
+          <div class="chip">Tiempo: <span id="latency">—</span></div>
         </div>
       </header>
 
-      <section class="chat" id="chatArea" aria-live="polite" tabindex="0">
-        <!-- messages -->
+      <section class="chat" id="chatArea">
+        <div class="msg bot">
+          <div class="avatar">AH</div>
+          <div>
+            <div class="bubble bot">¡Bienvenido! Escribe tu consulta y el router elegirá el mejor experto.</div>
+            <div class="meta">Hyperion Router</div>
+          </div>
+        </div>
       </section>
 
-      <div class="composer" role="form" aria-label="Compositor de mensajes">
-        <textarea id="input" placeholder="Escribe tu mensaje... (Shift+Enter para nueva línea)"></textarea>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div class="small">Temp: <input id="temp" type="range" min="0" max="1" step="0.05" value="0.2"></div>
-          <button class="send" id="sendBtn">Enviar</button>
-        </div>
+      <div class="composer">
+        <textarea id="input" placeholder="Escribe tu mensaje... (Shift+Enter para salto)"></textarea>
+        <button class="send" id="sendBtn">Enviar</button>
       </div>
+
       <div class="footer">
-        <div class="setting-row">Tokens estimados: <strong id="tokenEstimate">—</strong></div>
-        <div class="setting-row"><small class="small">Alpha Hyperion • Local</small></div>
+        <div>Expertos: mathstral:7b • codegemma:7b • gemma2:2b</div>
+        <div id="status">Router: activo</div>
       </div>
     </main>
   </div>
 
   <script>
-    // ========== Configuracion inicial ==========
-    const MODELS = [
-      { id:'alpha-math-7b', name:'AlphaMath-7B', ctx:'8k', role:'Matemáticas'},
-      { id:'alpha-code-13b', name:'AlphaCode-13B', ctx:'32k', role:'Código'},
-      { id:'alpha-vision-8b', name:'AlphaVision-8B', ctx:'32k', role:'Visión'},
-      { id:'alpha-reason-34b', name:'AlphaReason-34B', ctx:'128k', role:'Razonamiento'},
-      { id:'alpha-agent-70b', name:'AlphaAgent-70B', ctx:'128k', role:'Agente'},
-      { id:'alpha-lang-13b', name:'AlphaLang-13B', ctx:'32k', role:'Multilingüe'},
-      { id:'alpha-med-7b', name:'AlphaMed-7B', ctx:'8k', role:'Salud'},
-      { id:'alpha-law-13b', name:'AlphaLaw-13B', ctx:'32k', role:'Legal'},
-      { id:'alpha-finance-34b', name:'AlphaFinance-34B', ctx:'128k', role:'Finanzas'},
-      { id:'alpha-game-70b', name:'AlphaGame-70B', ctx:'128k', role:'Juegos'}
-    ];
+    // === CONFIGURACIÓN ===
+    const API_URL = '/api/chat'; // Tu API en Vercel
+    const EXPERTS = {
+      'mathstral:7b': { name: 'Mathstral 7B', role: 'Matemáticas', color: '#10b981' },
+      'codegemma:7b': { name: 'CodeGemma 7B', role: 'Programación', color: '#f59e0b' },
+      'gemma2:2b': { name: 'Gemma2 2B', role: 'Lenguaje', color: '#8b5cf6' }
+    };
 
-    const apiEndpoint = '/api/chat'; // Cambia por tu endpoint del router
-
-    // ========== UI helpers ==========
-    const modelList = document.getElementById('modelList');
-    const selectedModelLabel = document.getElementById('selectedModel');
-    const contextSizeLabel = document.getElementById('contextSize');
+    // === ELEMENTOS ===
     const chatArea = document.getElementById('chatArea');
     const input = document.getElementById('input');
     const sendBtn = document.getElementById('sendBtn');
-    const temp = document.getElementById('temp');
-    const tokenEstimate = document.getElementById('tokenEstimate');
+    const convList = document.getElementById('convList');
+    const selectedExpert = document.getElementById('selectedExpert');
+    const latencyDisplay = document.getElementById('latency');
+    const status = document.getElementById('status');
 
-    let activeModel = MODELS[3]; // por defecto AlphaReason
-    let conversation = [];
+    // === ESTADO ===
+    let conversations = JSON.parse(localStorage.getItem('hyperion_convs') || '[]');
+    let currentConvId = null;
+    let currentMessages = [];
 
-    function renderModels(){
-      modelList.innerHTML = '';
-      MODELS.forEach(m => {
+    // === RENDER CONVERSACIONES ===
+    function renderConversations() {
+      convList.innerHTML = '';
+      conversations.forEach((conv, i) => {
         const el = document.createElement('div');
-        el.className = 'model' + (m.id===activeModel.id?' active':'');
-        el.setAttribute('role','button');
-        el.innerHTML = `<div style="display:flex;flex-direction:column"><strong>${m.name}</strong><span class='small'>${m.role} • ${m.ctx}</span></div><div class='small'>${m.ctx}</div>`;
-        el.onclick = ()=>{ activeModel = m; updateSelected(); renderModels(); };
-        modelList.appendChild(el);
+        el.className = `conv-item ${i === currentConvId ? 'active' : ''}`;
+        el.innerHTML = `
+          <div class="conv-title">${conv.title || 'Nueva conversación'}</div>
+          <div class="conv-time">${formatTime(conv.timestamp)}</div>
+        `;
+        el.onclick = () => loadConversation(i);
+        convList.appendChild(el);
       });
-      updateSelected();
-    }
-
-    function updateSelected(){
-      selectedModelLabel.textContent = 'Modelo: ' + activeModel.name;
-      contextSizeLabel.textContent = activeModel.ctx;
-    }
-
-    function appendMessage(who, text){
-      const div = document.createElement('div'); div.className='msg';
-      const avatar = document.createElement('div'); avatar.className='avatar'; avatar.textContent = who==='user' ? 'U' : 'AH';
-      const bubble = document.createElement('div'); bubble.className='bubble ' + (who==='user' ? 'user':'bot');
-      bubble.innerHTML = text.replace(/\n/g,'<br>');
-      const meta = document.createElement('div'); meta.className='meta'; meta.textContent = who==='user' ? 'Usuario' : activeModel.name;
-      const col = document.createElement('div'); col.style.flex='1'; col.appendChild(bubble); col.appendChild(meta);
-      div.appendChild(avatar); div.appendChild(col);
-      chatArea.appendChild(div);
-      chatArea.scrollTop = chatArea.scrollHeight;
-    }
-
-    function estimateTokens(text){
-      // estimacion brutal: 4 chars ~ 1 token
-      const approx = Math.ceil(text.length / 4);
-      tokenEstimate.textContent = approx + ' tokens (estim)';
-      return approx;
-    }
-
-    // ========== Send logic (calls /api/chat) ==========
-    async function send(){
-      const content = input.value.trim();
-      if(!content) return;
-      appendMessage('user', content);
-      estimateTokens(content);
-      input.value='';
-
-      // show a temporary assistant bubble
-      const loadingId = 'loading-'+Date.now();
-      appendMessage('bot', '… generando respuesta — contactando al router');
-
-      // Build payload
-      const payload = {
-        model: activeModel.id,
-        temperature: parseFloat(temp.value),
-        prompt: content,
-        context_limit: activeModel.ctx,
-        metadata: {source:'web-ui'}
-      };
-
-      try{
-        const t0 = performance.now();
-        const res = await fetch(apiEndpoint, {
-          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
-        });
-        const t1 = performance.now();
-        if(!res.ok){
-          const err = await res.text();
-          appendMessage('bot', 'Error del servidor: ' + err);
-          return;
-        }
-        const body = await res.json();
-        // Expected: { reply: string, tokens: {input: N, output: M}, model_used: 'alpha-reason-34b' }
-        const reply = body.reply || ('(sin respuesta)');
-        appendMessage('bot', reply + `\n\n— (modelo usado: ${body.model_used || 'desconocido'})\nTiempo: ${(t1-t0).toFixed(0)} ms`);
-      }catch(e){
-        appendMessage('bot', 'Excepción: ' + e.message);
+      if (conversations.length === 0) {
+        convList.innerHTML = '<div class="small" style="text-align:center; color:var(--muted)">Sin conversaciones</div>';
       }
     }
 
-    // keyboard
-    input.addEventListener('keydown', (e)=>{
-      if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }
+    function formatTime(ts) {
+      const d = new Date(ts);
+      const now = Date.now();
+      const diff = now - ts;
+      if (diff < 3600000) return `${Math.floor(diff/60000)} min`;
+      if (diff < 86400000) return `${Math.floor(diff/3600000)} h`;
+      return d.toLocaleDateString();
+    }
+
+    // === NUEVA CONVERSACIÓN ===
+    document.getElementById('newConv').onclick = () => {
+      const newConv = {
+        title: 'Nueva conversación',
+        timestamp: Date.now(),
+        messages: []
+      };
+      conversations.push(newConv);
+      currentConvId = conversations.length - 1;
+      currentMessages = [];
+      saveConversations();
+      renderConversations();
+      clearChat();
+      appendBotMessage('¡Nueva conversación iniciada! El router está listo.');
+    };
+
+    document.getElementById('clearAll').onclick = () => {
+      if (confirm('¿Borrar todas las conversaciones?')) {
+        conversations = [];
+        localStorage.removeItem('hyperion_convs');
+        currentConvId = null;
+        renderConversations();
+        clearChat();
+      }
+    };
+
+    function loadConversation(index) {
+      currentConvId = index;
+      currentMessages = conversations[index].messages;
+      renderConversations();
+      clearChat();
+      currentMessages.forEach(msg => {
+        if (msg.role === 'user') appendUserMessage(msg.content);
+        else appendBotMessage(msg.content, msg.expert);
+      });
+    }
+
+    function saveConversations() {
+      localStorage.setItem('hyperion_convs', JSON.stringify(conversations));
+    }
+
+    // === MENSAJES ===
+    function appendUserMessage(text) {
+      const msg = document.createElement('div'); msg.className = 'msg user';
+      msg.innerHTML = `
+        <div class="avatar">U</div>
+        <div>
+          <div class="bubble user">${escapeHtml(text).replace(/\n/g, '<br>')}</div>
+          <div class="meta">Tú</div>
+        </div>
+      `;
+      chatArea.appendChild(msg);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function appendBotMessage(text, expert = null) {
+      const msg = document.createElement('div'); msg.className = 'msg';
+      const expertInfo = expert ? EXPERTS[expert] || { name: expert, role: 'Desconocido' } : null;
+      msg.innerHTML = `
+        <div class="avatar" style="background: ${expertInfo ? expertInfo.color : 'linear-gradient(135deg, var(--accent), var(--accent-2))'}">
+          ${expertInfo ? expertInfo.name.charAt(0) : 'AH'}
+        </div>
+        <div>
+          <div class="bubble bot">${escapeHtml(text).replace(/\n/g, '<br>')}</div>
+          <div class="meta">${expertInfo ? expertInfo.name + ' • ' + expertInfo.role : 'Hyperion Router'}</div>
+        </div>
+      `;
+      chatArea.appendChild(msg);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function clearChat() {
+      chatArea.innerHTML = '';
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // === ENVÍO ===
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+      appendUserMessage(text);
+      input.value = '';
+
+      if (currentConvId === null) document.getElementById('newConv').click();
+
+      const payload = { query: text };
+      const t0 = performance.now();
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const t1 = performance.now();
+        latencyDisplay.textContent = `${(t1 - t0).toFixed(0)} ms`;
+
+        if (!res.ok) throw new Error('Error del servidor');
+
+        const data = await res.json();
+        const response = data.response || '(sin respuesta)';
+        const expert = data.primary_expert || null;
+
+        appendBotMessage(response, expert);
+        selectedExpert.textContent = expert ? EXPERTS[expert]?.name || expert : 'Router';
+
+        // Actualizar título de conversación
+        if (conversations[currentConvId]) {
+          conversations[currentConvId].title = text.substring(0, 30) + (text.length > 30 ? '...' : '');
+          conversations[currentConvId].messages.push({ role: 'user', content: text });
+          conversations[currentConvId].messages.push({ role: 'assistant', content: response, expert });
+          saveConversations();
+          renderConversations();
+        }
+
+      } catch (e) {
+        appendBotMessage('Error: ' + e.message);
+        status.textContent = 'Router: error';
+      }
+    }
+
+    // === EVENTOS ===
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
     });
-    sendBtn.addEventListener('click', send);
+    sendBtn.addEventListener('click', sendMessage);
 
-    // quick actions
-    document.getElementById('newConv').addEventListener('click', ()=>{ conversation=[]; chatArea.innerHTML=''; appendMessage('bot','Bienvenido a Alpha Hyperion. Selecciona un experto y pregunta.'); });
-    document.getElementById('clearCache').addEventListener('click', ()=>{ localStorage.clear(); alert('Cache local limpiado'); });
-
-    // init
-    renderModels();
-    appendMessage('bot','Bienvenido a Alpha Hyperion. Selecciona un experto y haz tu primera pregunta.');
-
-    // Accessibility focus
-    chatArea.focus();
+    // === INIT ===
+    renderConversations();
+    if (conversations.length > 0) {
+      loadConversation(0);
+    }
   </script>
 </body>
 </html>
-
