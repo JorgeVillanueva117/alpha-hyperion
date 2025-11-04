@@ -8,7 +8,8 @@
   ],
   "functions": {
     "api/chat.py": {
-      "runtime": "python3.9"
+      "runtime": "python3.11",
+      "maxDuration": 30
     }
   }
 }
