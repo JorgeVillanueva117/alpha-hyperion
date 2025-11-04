@@ -1,18 +1,12 @@
-import requests
-from fastapi import Request
-from fastapi.responses import JSONResponse
-
-ROUTER_URL = "https://mi-router-publico.com/route"
+# api/chat.py
+LOCAL_ROUTER = "http://127.0.0.1:8000"  # tu FastAPI local
 
 async def chat(request: Request):
     data = await request.json()
     query = data.get("query", "")
-    
     try:
-        res = requests.post(f"{ROUTER_URL}", json={"query": query}, timeout=30)
+        res = requests.post(f"{LOCAL_ROUTER}/route", json={"query": query}, timeout=60)
         res.raise_for_status()
         return JSONResponse(res.json())
-    except requests.Timeout:
-        return JSONResponse({"error": "El Router no respondió a tiempo."}, status_code=504)
-    except requests.RequestException as e:
-        return JSONResponse({"error": "Error conectando con el Router."}, status_code=503)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
