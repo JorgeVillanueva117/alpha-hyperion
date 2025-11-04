@@ -3,7 +3,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 
 # ← PEGA TU URL DE PINGGY AQUÍ (luego)
-OLLAMA_TUNNEL = "https://rwdma-95-125-194-110.a.free.pinggy.link"
+OLLAMA_TUNNEL = "https://amicc-95-125-194-110.a.free.pinggy.link"
 
 
 async def chat(request: Request):
