@@ -1,5 +1,9 @@
-# api/chat.py
-LOCAL_ROUTER = "http://127.0.0.1:8000"  # tu FastAPI local
+from fastapi import Request
+from fastapi.responses import JSONResponse
+import requests
+
+# Apunta a tu FastAPI local en lugar de Pinggy
+LOCAL_ROUTER = "http://127.0.0.1:8000"
 
 async def chat(request: Request):
     data = await request.json()
